@@ -1,0 +1,51 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Choose the AIRTAP to add.",
+        "data": { "address": "Device" }
+      },
+      "bluetooth_confirm": {
+        "description": "Set up {name}? The vent accepts one Bluetooth connection at a time, so Home Assistant connects only briefly and the AC Infinity app can still be used."
+      }
+    },
+    "abort": {
+      "already_configured": "This AIRTAP is already configured.",
+      "no_devices_found": "No AIRTAP heard. It needs a Bluetooth adapter or ESPHome Bluetooth proxy (with active connections) within range.",
+      "not_supported": "This AC Infinity device is not an AIRTAP T-series."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": { "refresh_minutes": "Mode refresh interval (minutes)" },
+        "data_description": {
+          "refresh_minutes": "How often to connect and read the mode while the speed is unchanged. Speed changes always trigger a read. 0 reads only on speed changes."
+        }
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "mode": {
+        "name": "Mode",
+        "state": {
+          "off": "Off",
+          "on": "On",
+          "auto": "Auto",
+          "timer_to_on": "Timer to on",
+          "timer_to_off": "Timer to off",
+          "cycle": "Cycle",
+          "schedule": "Schedule"
+        }
+      }
+    },
+    "sensor": {
+      "speed": { "name": "Speed" }
+    }
+  },
+  "exceptions": {
+    "command_failed": { "message": "AIRTAP command failed: {error}" }
+  }
+}
