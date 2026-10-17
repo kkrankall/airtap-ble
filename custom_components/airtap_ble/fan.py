@@ -49,7 +49,7 @@ class AirtapFan(AirtapEntity, FanEntity):
 
     @property
     def percentage(self) -> int | None:
-        level = self.device.state.level
+        level = self.device.state.output_level
         if level is None:
             return None
         return ranged_value_to_percentage(SPEED_RANGE, level) if level else 0

@@ -12,9 +12,9 @@ one uses a different domain (`airtap_ble`), so both can be installed together.
 | Entity | What it does |
 | --- | --- |
 | `fan.airtap_xxxxx` | On/off and 10 speeds. On/off are the vent's manual **On** and **Off** modes; turning on without a speed keeps the stored speed. |
+| `number.airtap_xxxxx_speed` | Speed slider on the device page: 0 = Off, 1–10 runs the vent in manual On mode at that speed. Shows the actual output, so it also follows Auto, Timer and the vent's buttons. |
 | `select.airtap_xxxxx_mode` | Off, On, Auto, Timer to on, Timer to off, Cycle, Schedule. Auto/Timer/Cycle/Schedule use the triggers and times set in the AC Infinity app. |
 | `sensor.airtap_xxxxx_temperature` | The vent's built-in temperature probe. |
-| `sensor.airtap_xxxxx_speed` | Actual output level, 0–10. |
 | `sensor.airtap_xxxxx_signal_strength` | RSSI (diagnostic, disabled by default). |
 
 Temperature and speed come from the vent's advertisements, with no connection.

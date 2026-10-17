@@ -39,12 +39,6 @@ SENSORS = (
         value_fn=lambda s: s.temperature,
     ),
     AirtapSensorDescription(
-        key="speed",
-        translation_key="speed",
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda s: s.level,
-    ),
-    AirtapSensorDescription(
         key="rssi",
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,

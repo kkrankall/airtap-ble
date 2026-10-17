@@ -4,7 +4,9 @@
     "step": {
       "user": {
         "description": "Choose the AIRTAP to add.",
-        "data": { "address": "Device" }
+        "data": {
+          "address": "Device"
+        }
       },
       "bluetooth_confirm": {
         "description": "Set up {name}? The vent accepts one Bluetooth connection at a time, so Home Assistant connects only briefly and the AC Infinity app can still be used."
@@ -19,7 +21,9 @@
   "options": {
     "step": {
       "init": {
-        "data": { "refresh_minutes": "Mode refresh interval (minutes)" },
+        "data": {
+          "refresh_minutes": "Mode refresh interval (minutes)"
+        },
         "data_description": {
           "refresh_minutes": "How often to connect and read the mode while the speed is unchanged. Speed changes always trigger a read. 0 reads only on speed changes."
         }
@@ -27,6 +31,11 @@
     }
   },
   "entity": {
+    "number": {
+      "speed": {
+        "name": "Speed"
+      }
+    },
     "select": {
       "mode": {
         "name": "Mode",
@@ -40,12 +49,11 @@
           "schedule": "Schedule"
         }
       }
-    },
-    "sensor": {
-      "speed": { "name": "Speed" }
     }
   },
   "exceptions": {
-    "command_failed": { "message": "AIRTAP command failed: {error}" }
+    "command_failed": {
+      "message": "AIRTAP command failed: {error}"
+    }
   }
 }

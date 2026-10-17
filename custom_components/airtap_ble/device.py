@@ -38,6 +38,14 @@ class AirtapState:
     settings: dict[int, bytes] | None = None
     last_telemetry: bytes | None = None
 
+    @property
+    def output_level(self) -> int | None:
+        """Speed the vent is running at. Off mode reads 0 even while the
+        motor spins down and telemetry still reports the old speed."""
+        if self.mode == p.Mode.OFF:
+            return 0
+        return self.level
+
 
 class AirtapError(Exception):
     """Talking to the vent failed."""

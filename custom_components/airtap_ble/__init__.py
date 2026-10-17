@@ -7,13 +7,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import entity_registry as er
 
-from .const import CONF_REFRESH_MINUTES, DEFAULT_REFRESH_MINUTES
+from .const import CONF_REFRESH_MINUTES, DEFAULT_REFRESH_MINUTES, DOMAIN
 from .coordinator import AirtapCoordinator
 from .device import AirtapDevice
 from .protocol import MANUFACTURER_ID, parse_advertisement
 
-PLATFORMS = [Platform.FAN, Platform.SELECT, Platform.SENSOR]
+PLATFORMS = [Platform.FAN, Platform.NUMBER, Platform.SELECT, Platform.SENSOR]
 
 type AirtapConfigEntry = ConfigEntry[AirtapCoordinator]
 
@@ -31,6 +32,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: AirtapConfigEntry) -> bo
     ):
         if adv := parse_advertisement(raw):
             device.update_from_advertisement(adv, info.rssi)
+
+    # 0.2.0 replaced the read-only Speed sensor with the Speed slider.
+    registry = er.async_get(hass)
+    if old := registry.async_get_entity_id("sensor", DOMAIN, f"{address}_speed"):
+        registry.async_remove(old)
 
     refresh = entry.options.get(CONF_REFRESH_MINUTES, DEFAULT_REFRESH_MINUTES) * 60
     coordinator = AirtapCoordinator(hass, device, refresh)

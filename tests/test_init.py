@@ -10,6 +10,11 @@ from homeassistant.components.fan import (
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
 )
+from homeassistant.components.number import (
+    ATTR_VALUE,
+    DOMAIN as NUMBER_DOMAIN,
+    SERVICE_SET_VALUE,
+)
 from homeassistant.components.select import (
     ATTR_OPTION,
     DOMAIN as SELECT_DOMAIN,
@@ -20,6 +25,7 @@ from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 import pytest
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
@@ -35,7 +41,7 @@ from .conftest import ADDRESS, ADV_ON_1, inject, service_info
 FAN = "fan.airtap_453sc"
 MODE = "select.airtap_453sc_mode"
 TEMP = "sensor.airtap_453sc_temperature"
-SPEED = "sensor.airtap_453sc_speed"
+SPEED = "number.airtap_453sc_speed"
 
 
 @pytest.fixture
@@ -103,7 +109,7 @@ async def test_state_from_advert_and_poll(hass: HomeAssistant, setup, vent):
     assert hass.states.get(FAN).attributes[ATTR_PERCENTAGE] == 10
     assert hass.states.get(MODE).state == "on"
     assert float(hass.states.get(TEMP).state) == pytest.approx(18.46)
-    assert hass.states.get(SPEED).state == "1"
+    assert float(hass.states.get(SPEED).state) == 1
     # One connection: the throwaway prime read, then the real read.
     assert vent.connections == 1
     assert [p.parse_frame(f).payload for f in vent.received] == [
@@ -119,7 +125,7 @@ async def test_fan_control(hass: HomeAssistant, setup, vent):
     )
     assert vent.params[16] == bytes([p.Mode.ON]) and vent.params[18] == bytes([5])
     assert hass.states.get(FAN).attributes[ATTR_PERCENTAGE] == 50
-    assert hass.states.get(SPEED).state == "5"
+    assert float(hass.states.get(SPEED).state) == 5
 
     await hass.services.async_call(
         FAN_DOMAIN, SERVICE_TURN_OFF, {ATTR_ENTITY_ID: FAN}, blocking=True
@@ -134,6 +140,56 @@ async def test_fan_control(hass: HomeAssistant, setup, vent):
     )
     assert vent.mode == p.Mode.ON and vent.params[18] == bytes([5])
     assert hass.states.get(FAN).state == STATE_ON
+
+
+async def test_speed_slider(hass: HomeAssistant, setup, vent):
+    await hass.services.async_call(
+        NUMBER_DOMAIN, SERVICE_SET_VALUE, {ATTR_ENTITY_ID: SPEED, ATTR_VALUE: 4},
+        blocking=True,
+    )
+    assert vent.mode == p.Mode.ON and vent.params[18] == bytes([4])
+    assert float(hass.states.get(SPEED).state) == 4
+    assert hass.states.get(FAN).attributes[ATTR_PERCENTAGE] == 40
+
+    await hass.services.async_call(
+        NUMBER_DOMAIN, SERVICE_SET_VALUE, {ATTR_ENTITY_ID: SPEED, ATTR_VALUE: 0},
+        blocking=True,
+    )
+    assert vent.mode == p.Mode.OFF
+    assert vent.params[18] == bytes([4])  # off keeps the stored speed
+    assert float(hass.states.get(SPEED).state) == 0
+    assert hass.states.get(FAN).state == STATE_OFF
+
+
+async def test_off_while_spinning_down(hass: HomeAssistant, setup, vent):
+    """Telemetry still shows the old speed for a moment after Off."""
+    device = setup.runtime_data.device
+    device._update(mode=int(p.Mode.OFF), level=1)
+    await hass.async_block_till_done()
+    assert hass.states.get(FAN).state == STATE_OFF
+    assert hass.states.get(FAN).attributes[ATTR_PERCENTAGE] == 0
+    assert float(hass.states.get(SPEED).state) == 0
+
+
+async def test_old_speed_sensor_removed(hass: HomeAssistant, enable_bluetooth, vent):
+    registry = er.async_get(hass)
+    entry = MockConfigEntry(
+        domain=DOMAIN, unique_id=ADDRESS, title="AIRTAP 453SC", data={"address": ADDRESS}
+    )
+    entry.add_to_hass(hass)
+    registry.async_get_or_create(
+        "sensor", DOMAIN, f"{ADDRESS}_speed", config_entry=entry,
+        suggested_object_id="airtap_453sc_speed",
+    )
+    inject(hass, service_info(ADV_ON_1))
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert registry.async_get_entity_id("sensor", DOMAIN, f"{ADDRESS}_speed") is None
+    assert registry.async_get_entity_id("number", DOMAIN, f"{ADDRESS}_speed")
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
 
 
 async def test_mode_select(hass: HomeAssistant, setup, vent):
@@ -155,7 +211,7 @@ async def test_level_change_triggers_poll(hass: HomeAssistant, setup, vent):
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=11))
     await hass.async_block_till_done(wait_background_tasks=True)
     assert len(vent.received) > before
-    assert hass.states.get(SPEED).state == "3"
+    assert float(hass.states.get(SPEED).state) == 3
 
 
 async def test_busy_vent_poll_fails_quietly(
@@ -174,7 +230,7 @@ async def test_busy_vent_poll_fails_quietly(
     assert "Bluetooth error whilst polling" in caplog.text
     assert "Traceback" not in caplog.text
     # Advert data still flows while the vent cannot be reached.
-    assert hass.states.get(SPEED).state == "4"
+    assert float(hass.states.get(SPEED).state) == 4
 
 
 async def test_command_error(hass: HomeAssistant, setup):
