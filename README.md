@@ -68,7 +68,8 @@ the Android-derived [hunterjm/ac-infinity-ble](https://github.com/hunterjm/ac-in
 
 `tools/airtap_cli.py` drives a vent from a desktop with the same code:
 `scan`, `read`, `on [speed]`, `off`, `mode auto`. On macOS, run it from
-Terminal.app (Bluetooth permission is granted per app).
+Terminal.app (Bluetooth permission is granted per app). `tools/make_icon.py`
+redraws the brand icons in `custom_components/airtap_ble/brand/` (Pillow).
 
 ## Development
 
